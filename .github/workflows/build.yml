@@ -20,19 +20,21 @@ jobs:
     - name: Checkout xiaozhi-esp32
       uses: actions/checkout@v4
       with:
+        # Вот ваша официальная ссылка на проект, установленная строго на нужное место
         repository: 78/xiaozhi-esp32
+        ref: 341a9bc253b2be03a556d4ba40df7023348006e8
         path: xiaozhi-esp32
         submodules: recursive
-        # Убираем depth: 1, чтобы GitHub мог переключиться на нужный нам стабильный коммит
-        fetch-depth: 0
       timeout-minutes: 30
 
-    - name: Rollback to stable commit
-      run: |
-        cd xiaozhi-esp32
-        # Переключаем проект робота на стабильный срез кода до глобального изменения методов модема
-        git checkout 341a9bc253b2be03a556d4ba40df7023348006e8
-        git submodule update --init --recursive
+    - name: Checkout ESP-IDF v5.5
+      uses: actions/checkout@v4
+      with:
+        repository: espressif/esp-idf
+        ref: release/v5.5
+        path: esp-idf
+        submodules: recursive
+        fetch-depth: 1
 
     - name: Setup board configuration
       run: |
@@ -51,19 +53,16 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install ESP-IDF
+    - name: Install ESP-IDF Tools
       run: |
         sudo apt-get update
         sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-        # Скачиваем стабильную версию ветки 5.5 с официального адреса Espressif
-        git clone -b release/v5.5 --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
-        cd ~/esp-idf
-        git submodule update --init --recursive --depth 1
+        cd ${GITHUB_WORKSPACE}/esp-idf
         ./install.sh esp32c3
 
     - name: Build firmware
       run: |
-        source ~/esp-idf/export.sh
+        source ${GITHUB_WORKSPACE}/esp-idf/export.sh
         cd xiaozhi-esp32
         
         # Напрямую регистрируем кастомную плату через системную переменную для CMake
