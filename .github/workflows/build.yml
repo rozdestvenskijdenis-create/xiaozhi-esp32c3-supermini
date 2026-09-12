@@ -23,8 +23,16 @@ jobs:
         repository: 78/xiaozhi-esp32
         path: xiaozhi-esp32
         submodules: recursive
-        fetch-depth: 1
+        # Убираем depth: 1, чтобы GitHub мог переключиться на нужный нам стабильный коммит
+        fetch-depth: 0
       timeout-minutes: 30
+
+    - name: Rollback to stable commit
+      run: |
+        cd xiaozhi-esp32
+        # Переключаем проект робота на стабильный срез кода до глобального изменения методов модема
+        git checkout 341a9bc253b2be03a556d4ba40df7023348006e8
+        git submodule update --init --recursive
 
     - name: Setup board configuration
       run: |
@@ -34,8 +42,7 @@ jobs:
         cp board-config/esp32c3_supermini_board.cc xiaozhi-esp32/main/boards/esp32c3-supermini/
         python3 board-config/scripts/setup_board.py xiaozhi-esp32/main
         
-        # ТРЮК: Удаляем жесткое требование версии IDF >=6.0.1 из манифеста, 
-        # чтобы проект успешно скомпилировался на стабильной версии 5.5!
+        # ТРЮК: Зачищаем манифесты от жестких проверок версий
         find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/idf:/d' {} +
         find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/version:/d' {} +
 
@@ -48,7 +55,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-        # Переключаемся на ветку release/v5.5 для полной совместимости со шрифтами и компонентами
+        # Скачиваем стабильную версию ветки 5.5
         git clone -b release/v5.5 --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
         cd ~/esp-idf
         git submodule update --init --recursive --depth 1
