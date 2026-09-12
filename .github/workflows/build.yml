@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Запускаем сборку внутри официального Docker-контейнера Espressif с нужной версией ESP-IDF v6.0
+    container: espressif/idf:release-v6.0
     
     steps:
     - name: Checkout this repo
@@ -20,19 +22,8 @@ jobs:
     - name: Checkout xiaozhi-esp32
       uses: actions/checkout@v4
       with:
-        # Вот ваша официальная ссылка на проект, установленная строго на нужное место
         repository: 78/xiaozhi-esp32
-        ref: 341a9bc253b2be03a556d4ba40df7023348006e8
         path: xiaozhi-esp32
-        submodules: recursive
-      timeout-minutes: 30
-
-    - name: Checkout ESP-IDF v5.5
-      uses: actions/checkout@v4
-      with:
-        repository: espressif/esp-idf
-        ref: release/v5.5
-        path: esp-idf
         submodules: recursive
         fetch-depth: 1
 
@@ -43,26 +34,12 @@ jobs:
         cp board-config/config.json xiaozhi-esp32/main/boards/esp32c3-supermini/
         cp board-config/esp32c3_supermini_board.cc xiaozhi-esp32/main/boards/esp32c3-supermini/
         python3 board-config/scripts/setup_board.py xiaozhi-esp32/main
-        
-        # ТРЮК: Зачищаем манифесты от жестких проверок версий
-        find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/idf:/d' {} +
-        find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/version:/d' {} +
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install ESP-IDF Tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-        cd ${GITHUB_WORKSPACE}/esp-idf
-        ./install.sh esp32c3
 
     - name: Build firmware
+      shell: bash
       run: |
-        source ${GITHUB_WORKSPACE}/esp-idf/export.sh
+        # Включаем инструменты ESP-IDF (в контейнере они уже установлены)
+        . /opt/esp/idf/export.sh
         cd xiaozhi-esp32
         
         # Напрямую регистрируем кастомную плату через системную переменную для CMake
@@ -94,7 +71,6 @@ jobs:
         
         # Проверка создания бинарного файла со встроенной моделью голоса
         ls -la build/generated_assets.bin
-      timeout-minutes: 60
 
     - name: Upload firmware artifact
       uses: actions/upload-artifact@v4
