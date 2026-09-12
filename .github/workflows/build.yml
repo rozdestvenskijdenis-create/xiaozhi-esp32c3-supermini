@@ -34,6 +34,11 @@ jobs:
         cp board-config/esp32c3_supermini_board.cc xiaozhi-esp32/main/boards/esp32c3-supermini/
         python3 board-config/scripts/setup_board.py xiaozhi-esp32/main
 
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
     - name: Install ESP-IDF
       run: |
         sudo apt-get update
