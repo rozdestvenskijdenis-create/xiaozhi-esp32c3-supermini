@@ -43,7 +43,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-        git clone -b master --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
+        git clone -b master --depth 1 https://github.com ~/esp-idf
         cd ~/esp-idf
         git submodule update --init --recursive --depth 1
         ./install.sh esp32c3
@@ -53,10 +53,10 @@ jobs:
         source ~/esp-idf/export.sh
         cd xiaozhi-esp32
         
-        # 使用官方构建方式：先set-target，再追加配置到sdkconfig
-        idf.py set-target esp32c3
+        # Напрямую регистрируем кастомную плату через системную переменную для CMake
+        export EXTRA_COMPONENT_DIRS="${GITHUB_WORKSPACE}/xiaozhi-esp32/main/boards"
         
-        # 追加配置到sdkconfig（模仿release.py）
+        # Добавляем конфигурационные параметры для ESP32-C3 SuperMini в sdkconfig
         echo "" >> sdkconfig
         echo "# Append for ESP32-C3 SuperMini" >> sdkconfig
         echo "CONFIG_BOARD_TYPE_ESP32C3_SUPERMINI=y" >> sdkconfig
@@ -64,21 +64,23 @@ jobs:
         echo 'CONFIG_ESPTOOLPY_FLASHSIZE="4MB"' >> sdkconfig
         echo "CONFIG_PARTITION_TABLE_CUSTOM=y" >> sdkconfig
         echo 'CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions/v2/4m.csv"' >> sdkconfig
-        # 内存优化（参考esp-hi）
+        
+        # Оптимизация памяти (из оригинального конфига XiaoZhi)
         echo "CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=3" >> sdkconfig
         echo "CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=4" >> sdkconfig
         echo "CONFIG_ESP_WIFI_AMPDU_TX_ENABLED=n" >> sdkconfig
         echo "CONFIG_ESP_WIFI_RX_BA_WIN=4" >> sdkconfig
         echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig
-        # 启用离线唤醒词（必须先禁用默认的DISABLED，再启用ESP_WAKE_WORD）
+        
+        # Настройка офлайн-активации по фразе "Нихао Сяочжи"
         echo "# CONFIG_WAKE_WORD_DISABLED is not set" >> sdkconfig
         echo "CONFIG_USE_ESP_WAKE_WORD=y" >> sdkconfig
         echo "CONFIG_SR_WN_WN9S_NIHAOXIAOZHI=y" >> sdkconfig
         
-        # 重新配置并构建
-        idf.py reconfigure
-        idf.py -DBOARD_NAME=esp32c3-supermini -DBOARD_TYPE=esp32c3-supermini build
-        # 验证 generated_assets.bin 已生成（包含唤醒词模型）
+        # Сборка прошивки под ESP-IDF v6 с указанием кастомного имени платы
+        idf.py -DBOARD_NAME=esp32c3-supermini set-target esp32c3 build
+        
+        # Проверка создания бинарного файла со встроенной моделью голоса
         ls -la build/generated_assets.bin
       timeout-minutes: 60
 
