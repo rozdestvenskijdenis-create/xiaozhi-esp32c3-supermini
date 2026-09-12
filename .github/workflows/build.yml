@@ -55,7 +55,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-        # Скачиваем стабильную версию ветки 5.5
+        # Скачиваем стабильную версию ветки 5.5 с официального адреса Espressif
         git clone -b release/v5.5 --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
         cd ~/esp-idf
         git submodule update --init --recursive --depth 1
