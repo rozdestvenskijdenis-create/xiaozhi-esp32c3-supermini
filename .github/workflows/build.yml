@@ -35,7 +35,7 @@ jobs:
         python3 board-config/scripts/setup_board.py xiaozhi-esp32/main
         
         # ТРЮК: Удаляем жесткое требование версии IDF >=6.0.1 из манифеста, 
-        # чтобы проект успешно скомпилировался на стабильной версии 5.4!
+        # чтобы проект успешно скомпилировался на стабильной версии 5.5!
         find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/idf:/d' {} +
         find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/version:/d' {} +
 
@@ -48,8 +48,8 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-        # Скачиваем самую стабильную версию ветки 5.4, где все функции UHCI и GDMA гарантированно работают
-        git clone -b release/v5.4 --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
+        # Переключаемся на ветку release/v5.5 для полной совместимости со шрифтами и компонентами
+        git clone -b release/v5.5 --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
         cd ~/esp-idf
         git submodule update --init --recursive --depth 1
         ./install.sh esp32c3
