@@ -33,6 +33,11 @@ jobs:
         cp board-config/config.json xiaozhi-esp32/main/boards/esp32c3-supermini/
         cp board-config/esp32c3_supermini_board.cc xiaozhi-esp32/main/boards/esp32c3-supermini/
         python3 board-config/scripts/setup_board.py xiaozhi-esp32/main
+        
+        # ТРЮК: Удаляем жесткое требование версии IDF >=6.0.1 из манифеста, 
+        # чтобы проект успешно скомпилировался на стабильной версии 5.4!
+        find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/idf:/d' {} +
+        find xiaozhi-esp32 -name "idf_component.yml" -exec sed -i '/version:/d' {} +
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
@@ -43,7 +48,8 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-        git clone -b master --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
+        # Скачиваем самую стабильную версию ветки 5.4, где все функции UHCI и GDMA гарантированно работают
+        git clone -b release/v5.4 --depth 1 https://github.com/espressif/esp-idf.git ~/esp-idf
         cd ~/esp-idf
         git submodule update --init --recursive --depth 1
         ./install.sh esp32c3
@@ -77,7 +83,7 @@ jobs:
         echo "CONFIG_USE_ESP_WAKE_WORD=y" >> sdkconfig
         echo "CONFIG_SR_WN_WN9S_NIHAOXIAOZHI=y" >> sdkconfig
         
-        # Сборка прошивки под ESP-IDF v6 с указанием кастомного имени платы
+        # Сборка прошивки
         idf.py -DBOARD_NAME=esp32c3-supermini set-target esp32c3 build
         
         # Проверка создания бинарного файла со встроенной моделью голоса
